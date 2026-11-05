@@ -60,7 +60,7 @@ class HostPipeline(BasePipelineElement):
         suite_name: str,
         defended: bool,
         model_label: str = "local",
-        timeout_seconds: float = 3600,  # a whole task: several slow local model calls
+        timeout_seconds: float = 1800,  # a whole task: several slow local model calls
     ) -> None:
         self.tool_server = tool_server
         self.host_url = host_url.rstrip("/")
@@ -92,18 +92,22 @@ class HostPipeline(BasePipelineElement):
         if self._errors_in_a_row >= self.give_up_after:
             body: dict[str, Any] = {"error": f"skipped after {self.give_up_after} host errors in a row"}
         else:
-            response = self._http.post(
-                f"{self.host_url}/run",
-                json={
-                    "mcp_url": self.tool_server.url,
-                    "suite": self.suite_name,
-                    "defended": self.defended,
-                    "system_prompt": self.system_message,
-                    "query": query,
-                },
-            )
-            response.raise_for_status()
-            body = response.json()
+            try:
+                response = self._http.post(
+                    f"{self.host_url}/run",
+                    json={
+                        "mcp_url": self.tool_server.url,
+                        "suite": self.suite_name,
+                        "defended": self.defended,
+                        "system_prompt": self.system_message,
+                        "query": query,
+                    },
+                )
+                response.raise_for_status()
+                body = response.json()
+            except httpx.HTTPError as exc:
+                # A host that hangs or drops the connection fails this task, not the whole run.
+                body = {"error": f"bridge could not get an answer from the host: {type(exc).__name__}: {exc}"}
         self.tasks_run += 1
         self.last_host_response = body
 
