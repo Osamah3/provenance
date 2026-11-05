@@ -10,7 +10,9 @@
 using Provenance.AgentDojo.Host;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(builder.Configuration["Urls"] ?? "http://127.0.0.1:5080");
+// The Python bridge expects port 5080. Use our own setting, not ASP.NET's "Urls", so a
+// launchSettings.json created by Visual Studio can't move the host to a random port.
+builder.WebHost.UseUrls(builder.Configuration["Host:Url"] ?? "http://127.0.0.1:5080");
 
 var model = ModelSettings.From(builder.Configuration);
 var policies = SuitePolicies.Load(Path.Combine(AppContext.BaseDirectory, "policies"));
