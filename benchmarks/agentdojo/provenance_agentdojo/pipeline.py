@@ -73,6 +73,10 @@ class HostPipeline(BasePipelineElement):
         self._http = httpx.Client(timeout=timeout_seconds)
         self.last_host_response: dict[str, Any] | None = None
         self.host_errors: list[str] = []
+        # After this many host errors in a row (typically a daily rate limit), stop calling the
+        # host and fail the remaining tasks fast; --resume runs them later.
+        self.give_up_after = 3
+        self._errors_in_a_row = 0
         self.tasks_run = 0
 
     def query(
@@ -85,25 +89,31 @@ class HostPipeline(BasePipelineElement):
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
         self.tool_server.bind(runtime, env)
 
-        response = self._http.post(
-            f"{self.host_url}/run",
-            json={
-                "mcp_url": self.tool_server.url,
-                "suite": self.suite_name,
-                "defended": self.defended,
-                "system_prompt": self.system_message,
-                "query": query,
-            },
-        )
-        response.raise_for_status()
-        body = response.json()
+        if self._errors_in_a_row >= self.give_up_after:
+            body: dict[str, Any] = {"error": f"skipped after {self.give_up_after} host errors in a row"}
+        else:
+            response = self._http.post(
+                f"{self.host_url}/run",
+                json={
+                    "mcp_url": self.tool_server.url,
+                    "suite": self.suite_name,
+                    "defended": self.defended,
+                    "system_prompt": self.system_message,
+                    "query": query,
+                },
+            )
+            response.raise_for_status()
+            body = response.json()
+        self.tasks_run += 1
         self.last_host_response = body
 
-        self.tasks_run += 1
         output = normalize_typography(body.get("output") or "")
         if body.get("error"):
             self.host_errors.append(body["error"])
+            self._errors_in_a_row += 1
             output = f"[host error] {body['error']}"
+        else:
+            self._errors_in_a_row = 0
 
         transcript: list[ChatMessage] = [
             ChatSystemMessage(role="system", content=[text_content_block_from_string(self.system_message)]),

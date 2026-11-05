@@ -79,7 +79,7 @@ $env:Model__ApiKey = "gsk_..."
 dotnet run --project benchmarks/agentdojo/host -- --Model:Endpoint=https://api.groq.com/openai/v1 --Model:Name=llama-3.3-70b-versatile
 ```
 
-Free tiers cap tokens per day, so expect to run a few tasks at a time, not the whole suite.
+Free tiers cap tokens per day, so expect to run a few tasks at a time, not the whole suite. Add `--resume` to run a large selection over several days: each run keeps the tasks already in `results/traces`, retries the ones that failed in the host, and reports totals over everything done so far. After three host errors in a row (usually the daily limit) the bridge stops calling the host and marks the rest as still to run. Use a separate `--out` directory per model, so resumed runs never mix models.
 
 If you use a hosted model, pass `--model-label` with a name AgentDojo knows (for example `gpt-4o-mini-2024-07-18`), so its attacks address the model the way the published results do.
 
