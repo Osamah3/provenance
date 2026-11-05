@@ -103,5 +103,9 @@ class HostPipeline(BasePipelineElement):
         )
 
         all_messages = [*messages, *transcript]
-        Logger.get().log(all_messages)  # lets AgentDojo's trace files include the conversation
+        logger = Logger.get()
+        logger.log(all_messages)  # lets AgentDojo's trace files include the conversation
+        if hasattr(logger, "set_contextarg"):
+            # Provenance's allow/block decisions, so a trace shows why a defended run did what it did.
+            logger.set_contextarg("provenance_audit", body.get("audit"))
         return query, runtime, self.tool_server.env, all_messages, extra_args
