@@ -8,7 +8,9 @@ public sealed record RunRequest(
     [property: JsonPropertyName("suite")] string Suite,
     [property: JsonPropertyName("defended")] bool Defended,
     [property: JsonPropertyName("system_prompt")] string SystemPrompt,
-    [property: JsonPropertyName("query")] string Query);
+    [property: JsonPropertyName("query")] string Query,
+    // Wait out rate limits however long they last, instead of failing the task (bridge's --wait).
+    [property: JsonPropertyName("wait_for_rate_limits")] bool WaitForRateLimits = false);
 
 /// <summary>The agent's answer, the Provenance decisions behind it, or the error that stopped it.</summary>
 public sealed record RunResponse(

@@ -61,6 +61,7 @@ class HostPipeline(BasePipelineElement):
         defended: bool,
         model_label: str = "local",
         timeout_seconds: float = 1800,  # a whole task: several slow local model calls
+        wait_for_rate_limits: bool = False,
     ) -> None:
         self.tool_server = tool_server
         self.host_url = host_url.rstrip("/")
@@ -70,7 +71,9 @@ class HostPipeline(BasePipelineElement):
         # so the label must be one AgentDojo knows ("local" means a local model).
         self.name = f"{model_label}-provenance-{'defended' if defended else 'baseline'}"
         self.system_message = load_system_message(None)
-        self._http = httpx.Client(timeout=timeout_seconds)
+        self.wait_for_rate_limits = wait_for_rate_limits
+        # When the host waits out rate limits, one task can take hours: don't time it out.
+        self._http = httpx.Client(timeout=None if wait_for_rate_limits else timeout_seconds)
         self.last_host_response: dict[str, Any] | None = None
         self.host_errors: list[str] = []
         # After this many host errors in a row (typically a daily rate limit), stop calling the
@@ -101,6 +104,7 @@ class HostPipeline(BasePipelineElement):
                         "defended": self.defended,
                         "system_prompt": self.system_message,
                         "query": query,
+                        "wait_for_rate_limits": self.wait_for_rate_limits,
                     },
                 )
                 response.raise_for_status()
