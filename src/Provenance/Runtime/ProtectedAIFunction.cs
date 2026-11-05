@@ -181,11 +181,11 @@ public sealed class ProtectedAIFunction : DelegatingAIFunction
         {
             case string text when Session.Variables.TryGet(text, out var variable):
                 labels.Add(variable.Label);
-                return variable.Value;
+                return AsArgument(variable.Value);
 
             case JsonElement { ValueKind: JsonValueKind.String } element when Session.Variables.TryGet(element.GetString(), out var variable):
                 labels.Add(variable.Label);
-                return variable.Value;
+                return AsArgument(variable.Value);
 
             case JsonElement { ValueKind: JsonValueKind.Array } array:
                 List<object?>? items = null;
@@ -196,7 +196,7 @@ public sealed class ProtectedAIFunction : DelegatingAIFunction
                     {
                         items ??= [.. array.EnumerateArray().Take(index).Select(e => (object?)e.Clone())];
                         labels.Add(hidden.Label);
-                        items.Add(hidden.Value);
+                        items.Add(AsArgument(hidden.Value));
                     }
                     else
                     {
@@ -220,7 +220,7 @@ public sealed class ProtectedAIFunction : DelegatingAIFunction
                     if (Session.Variables.TryGet(s, out var hiddenItem))
                     {
                         labels.Add(hiddenItem.Label);
-                        return hiddenItem.Value;
+                        return AsArgument(hiddenItem.Value);
                     }
 
                     return (object?)s;
@@ -231,6 +231,9 @@ public sealed class ProtectedAIFunction : DelegatingAIFunction
                 return value;
         }
     }
+
+    // Tool results are often AIContent (MCP tools return TextContent); a tool argument needs the text itself.
+    private static object? AsArgument(object? value) => value is TextContent text ? text.Text : value;
 
     private object? LabelResult(System.Diagnostics.Activity? activity, object? raw, Check check)
     {

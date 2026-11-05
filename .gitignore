@@ -5,3 +5,6 @@ obj/
 *.user
 TestResults/
 artifacts/
+.venv/
+__pycache__/
+benchmarks/agentdojo/results/
