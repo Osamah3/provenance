@@ -1,0 +1,34 @@
+{
+  "_why": "Workspace suite (email, calendar, files). Reads return content written by other people, so they are untrusted and may run in an untrusted conversation, because their output is hidden anyway. Tools that change state or send data are trusted-output sinks that never accept untrusted input. Confidentiality is left public for every tool in this first version: the benchmark measures integrity (prompt-injection) defence.",
+
+  "default": { "source_integrity": "untrusted", "accepts_untrusted": false },
+
+  "tools": {
+    "get_current_day":                { "source_integrity": "trusted",   "accepts_untrusted": true },
+
+    "get_unread_emails":              { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "get_sent_emails":                { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "get_received_emails":            { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "get_draft_emails":               { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_emails":                  { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_contacts_by_name":        { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_contacts_by_email":       { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_calendar_events":         { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "get_day_calendar_events":        { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_files_by_filename":       { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "get_file_by_id":                 { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "list_files":                     { "source_integrity": "untrusted", "accepts_untrusted": true },
+    "search_files":                   { "source_integrity": "untrusted", "accepts_untrusted": true },
+
+    "send_email":                     { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "delete_email":                   { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "create_calendar_event":          { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "cancel_calendar_event":          { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "reschedule_calendar_event":      { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "add_calendar_event_participants":{ "source_integrity": "trusted",   "accepts_untrusted": false },
+    "append_to_file":                 { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "create_file":                    { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "delete_file":                    { "source_integrity": "trusted",   "accepts_untrusted": false },
+    "share_file":                     { "source_integrity": "trusted",   "accepts_untrusted": false }
+  }
+}

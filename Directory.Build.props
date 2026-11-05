@@ -12,6 +12,6 @@
 
   <PropertyGroup>
     <!-- Single place to bump dependency versions. -->
-    <MicrosoftExtensionsAIVersion>10.9.0</MicrosoftExtensionsAIVersion>
+    <MicrosoftExtensionsAIVersion>10.11.0</MicrosoftExtensionsAIVersion>
   </PropertyGroup>
 </Project>

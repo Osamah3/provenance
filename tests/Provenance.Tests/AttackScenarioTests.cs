@@ -183,6 +183,37 @@ public sealed class AttackScenarioTests
     }
 
     [Fact]
+    public async Task Hidden_text_content_reaches_a_tool_that_accepts_untrusted_input_as_plain_text()
+    {
+        // MCP tools return TextContent rather than strings; the receiving tool must get the text.
+        var session = new ProvenanceSession();
+        string? received = null;
+        var fetch = AIFunctionFactory.Create(
+            () => new TextContent("Login fails on Safari 18."),
+            new AIFunctionFactoryOptions { Name = "fetch_issue", MarshalResult = LabeledValue.PassThrough });
+        var countWords = AIFunctionFactory.Create(
+            (string text) =>
+            {
+                received = text;
+                return text.Split(' ').Length;
+            },
+            "count_words");
+
+        var model = new ScriptedChatClient(
+            _ => Call("fetch_issue"),
+            m => Call("count_words", new() { ["text"] = LastVariableId(m) }),
+            _ => Say("Done."));
+
+        await RunAsync(Agent(model, session),
+        [
+            session.Protect(fetch, ToolPolicy.UntrustedSource),
+            session.Protect(countWords, new ToolPolicy { SourceIntegrity = Integrity.Untrusted, AcceptsUntrusted = true }),
+        ]);
+
+        Assert.Equal("Login fails on Safari 18.", received);
+    }
+
+    [Fact]
     public void A_quarantine_client_that_can_run_tools_is_rejected()
     {
         var unsafeClient = new ChatClientBuilder(new ScriptedChatClient()).UseFunctionInvocation().Build();

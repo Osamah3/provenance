@@ -82,7 +82,7 @@ Every decision is recorded in `session.AuditLog` and as an OpenTelemetry span; s
 
 ## Roadmap
 
-1. AgentDojo benchmark: utility and attack-success rates for each model, with and without Provenance.
+1. AgentDojo benchmark: utility and attack-success rates for each model, with and without Provenance. The harness is in [`benchmarks/agentdojo`](benchmarks/agentdojo); results are not published yet.
 2. MCP client integration: annotation-derived policies and `_meta.ifc` labels applied automatically.
 3. Microsoft Agent Framework adapter (`AIAgentBuilder`).
 4. Human approval for policy violations, bound to the exact call.

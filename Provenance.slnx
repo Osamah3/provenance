@@ -8,4 +8,7 @@
   <Folder Name="/samples/">
     <Project Path="samples/IssueTriage/IssueTriage.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/agentdojo/host/Provenance.AgentDojo.Host.csproj" />
+  </Folder>
 </Solution>
