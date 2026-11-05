@@ -14,22 +14,25 @@ namespace Provenance.AgentDojo.Host;
 /// (<c>Model__Name=qwen3:8b</c>). Keys: <c>Provider</c> (<c>openai</c> or <c>scripted</c>),
 /// <c>Endpoint</c>, <c>Name</c>, <c>ApiKey</c>, <c>TimeoutSeconds</c> (per model call, default 600),
 /// <c>NoThink</c> (default true for Qwen3 models: turns off their long hidden reasoning, which is
-/// what makes local runs slow).
+/// what makes local runs slow), <c>Retries</c> (default 0 for a local endpoint, where a retry just
+/// repeats a slow call, and 3 for a hosted one, where it rides out rate limits).
 /// </remarks>
-public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink)
+public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink, int Retries)
 {
     public static ModelSettings From(IConfiguration configuration)
     {
         var section = configuration.GetSection("Model");
         var name = section["Name"] ?? "qwen3:8b";
+        var endpoint = new Uri(section["Endpoint"] ?? "http://localhost:11434/v1");
         return new ModelSettings(
             Provider: section["Provider"] ?? "openai",
-            Endpoint: new Uri(section["Endpoint"] ?? "http://localhost:11434/v1"),
+            Endpoint: endpoint,
             Name: name,
             // Ollama ignores the key, but the OpenAI client requires one.
             ApiKey: section["ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "ollama",
             Timeout: TimeSpan.FromSeconds(section.GetValue("TimeoutSeconds", 600)),
-            NoThink: section.GetValue("NoThink", name.StartsWith("qwen3", StringComparison.OrdinalIgnoreCase)));
+            NoThink: section.GetValue("NoThink", name.Contains("qwen3", StringComparison.OrdinalIgnoreCase)),
+            Retries: section.GetValue("Retries", endpoint.IsLoopback ? 0 : 3));
     }
 
     public IChatClient CreateClient()
@@ -49,8 +52,8 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             Endpoint = Endpoint,
             // Local models are slow; the default 100 s timeout cuts them off mid-answer.
             NetworkTimeout = Timeout,
-            // A retry after a timeout just repeats the same slow request.
-            RetryPolicy = new ClientRetryPolicy(maxRetries: 0),
+            // Retries back off and honour Retry-After, which hosted free tiers send when rate limiting.
+            RetryPolicy = new ClientRetryPolicy(maxRetries: Retries),
         };
 
         IChatClient client = new OpenAIClient(new ApiKeyCredential(ApiKey), options)
