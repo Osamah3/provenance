@@ -95,6 +95,9 @@ def run(args: argparse.Namespace) -> dict:
                 "user_tasks_run": len(no_attack["utility_results"]),
                 "attack_pairs_run": len(with_attack["security_results"]),
                 "seconds": round(time.monotonic() - started, 1),
+                "tasks_sent_to_host": pipeline.tasks_run,
+                "host_errors": len(pipeline.host_errors),
+                "first_host_error": pipeline.host_errors[0] if pipeline.host_errors else None,
                 "per_pair": {
                     f"{u}|{i}": {"utility": with_attack["utility_results"][(u, i)], "attack_succeeded": s}
                     for (u, i), s in with_attack["security_results"].items()
@@ -106,13 +109,16 @@ def run(args: argparse.Namespace) -> dict:
 
 def _print(report: dict) -> None:
     print(f"\nAgentDojo {report['benchmark_version']} · suite {report['suite']} · attack {report['attack']}")
-    print(f"{'':10} {'utility':>8} {'utility under attack':>21} {'attack success':>15} {'pairs':>6}")
+    print(f"{'':10} {'utility':>8} {'utility under attack':>21} {'attack success':>15} {'pairs':>6} {'host errors':>12}")
     for label, r in report["runs"].items():
         fmt = lambda v: "n/a" if v is None else f"{v:.0%}"  # noqa: E731
         print(
             f"{label:10} {fmt(r['utility']):>8} {fmt(r['utility_under_attack']):>21} "
-            f"{fmt(r['attack_success_rate']):>15} {r['attack_pairs_run']:>6}"
+            f"{fmt(r['attack_success_rate']):>15} {r['attack_pairs_run']:>6} {r['host_errors']:>12}"
         )
+    for label, r in report["runs"].items():
+        if r["first_host_error"]:
+            print(f"\n{label}: {r['host_errors']} of {r['tasks_sent_to_host']} tasks failed in the host. First error:\n  {r['first_host_error']}")
 
 
 def main() -> None:

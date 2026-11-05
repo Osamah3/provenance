@@ -50,6 +50,8 @@ class HostPipeline(BasePipelineElement):
         self.system_message = load_system_message(None)
         self._http = httpx.Client(timeout=timeout_seconds)
         self.last_host_response: dict[str, Any] | None = None
+        self.host_errors: list[str] = []
+        self.tasks_run = 0
 
     def query(
         self,
@@ -75,8 +77,10 @@ class HostPipeline(BasePipelineElement):
         body = response.json()
         self.last_host_response = body
 
+        self.tasks_run += 1
         output = body.get("output") or ""
         if body.get("error"):
+            self.host_errors.append(body["error"])
             output = f"[host error] {body['error']}"
 
         transcript: list[ChatMessage] = [
