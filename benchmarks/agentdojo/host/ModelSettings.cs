@@ -35,7 +35,8 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             MaxRateLimitWait: TimeSpan.FromSeconds(section.GetValue("MaxRateLimitWaitSeconds", 90)));
     }
 
-    public IChatClient CreateClient()
+    /// <param name="waitForRateLimits">Wait out every rate limit, even a daily cap, instead of failing.</param>
+    public IChatClient CreateClient(bool waitForRateLimits = false)
     {
         if (Provider == "scripted")
         {
@@ -60,7 +61,8 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
 
         IChatClient client = new RateLimitChatClient(
             new OpenAIClient(new ApiKeyCredential(ApiKey), options).GetChatClient(Name).AsIChatClient(),
-            MaxRateLimitWait);
+            maxWait: waitForRateLimits ? TimeSpan.FromHours(6) : MaxRateLimitWait,
+            maxAttempts: waitForRateLimits ? 200 : 5);
 
         return NoThink ? new NoThinkChatClient(client) : client;
     }

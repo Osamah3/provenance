@@ -101,7 +101,10 @@ def run(args: argparse.Namespace) -> dict:
     traces_dir = Path(args.out) / "traces"
     with ToolServer() as tool_server, _QuietLogger(str(traces_dir)):
         for defended in modes:
-            pipeline = HostPipeline(tool_server, args.host, args.suite, defended, model_label=args.model_label)
+            pipeline = HostPipeline(
+                tool_server, args.host, args.suite, defended,
+                model_label=args.model_label, wait_for_rate_limits=args.wait,
+            )
             label = "defended" if defended else "baseline"
             pipeline_dir = traces_dir / pipeline.name / suite.name
             if args.resume:
@@ -207,9 +210,16 @@ def main() -> None:
         action="store_true",
         help="Keep tasks already in <out>/traces and run only the rest (use a separate --out per model)",
     )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Wait out the model's rate limits, even a daily cap, so the run finishes unattended",
+    )
     args = parser.parse_args()
 
     _check_host(args.host)
+    if args.wait:
+        print("Waiting through rate limits: this can take a day or more. Keep both windows open and the PC awake.")
     report = run(args)
     _print(report)
 

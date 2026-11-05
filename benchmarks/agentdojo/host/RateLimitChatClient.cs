@@ -29,6 +29,14 @@ internal sealed class RateLimitChatClient(IChatClient inner, TimeSpan maxWait, i
                     throw new RateLimitException(wait, ex);
                 }
 
+                // A few seconds' margin, so the first request after the wait isn't refused again.
+                wait += TimeSpan.FromSeconds(5);
+                if (wait > TimeSpan.FromMinutes(1))
+                {
+                    Console.WriteLine(
+                        $"[rate limit] waiting {Math.Ceiling(wait.TotalMinutes)} min, until about {DateTime.Now.Add(wait):HH:mm}. Leave this window open.");
+                }
+
                 await Task.Delay(wait, cancellationToken);
             }
         }

@@ -22,7 +22,7 @@ internal static class AgentRunner
             cancellationToken: cancellationToken);
         IList<McpClientTool> mcpTools = await mcp.ListToolsAsync(cancellationToken: cancellationToken);
 
-        using var planner = model.CreateClient();
+        using var planner = model.CreateClient(request.WaitForRateLimits);
 
         if (!request.Defended)
         {
@@ -38,7 +38,7 @@ internal static class AgentRunner
         }
 
         var suitePolicy = policies.For(request.Suite);
-        using var quarantine = model.CreateClient();
+        using var quarantine = model.CreateClient(request.WaitForRateLimits);
         var session = new ProvenanceSession(new ProvenanceOptions { QuarantineClient = quarantine });
 
         List<AITool> tools = [.. mcpTools.Select(tool => session.Protect(tool, suitePolicy.For(tool.Name))), .. session.CreateSecurityTools()];
