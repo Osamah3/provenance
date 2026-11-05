@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 
+import httpx
 from agentdojo.attacks.attack_registry import load_attack
 from agentdojo.benchmark import benchmark_suite_with_injections, benchmark_suite_without_injections
 from agentdojo.logging import Logger
@@ -121,6 +123,18 @@ def _print(report: dict) -> None:
             print(f"\n{label}: {r['host_errors']} of {r['tasks_sent_to_host']} tasks failed in the host. First error:\n  {r['first_host_error']}")
 
 
+def _check_host(host: str) -> None:
+    """Fail with a plain message, not a long traceback, when the .NET host isn't running."""
+    try:
+        httpx.get(host, timeout=5)
+    except httpx.HTTPError:
+        sys.exit(
+            f"Can't reach the agent host at {host}.\n"
+            "Start it first in another window and wait until it says it's listening:\n"
+            "  dotnet run --project benchmarks/agentdojo/host -- --Model:Name=<model>"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="http://localhost:5080", help="URL of the agent host")
@@ -137,6 +151,7 @@ def main() -> None:
     parser.add_argument("--out", default="results", help="Directory for the JSON report")
     args = parser.parse_args()
 
+    _check_host(args.host)
     report = run(args)
     _print(report)
 
