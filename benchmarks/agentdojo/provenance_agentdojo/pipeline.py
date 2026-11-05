@@ -28,6 +28,28 @@ from agentdojo.types import (
 from .tool_server import ToolServer
 
 
+# Some models (gpt-oss in particular) write typographic characters: a non-breaking hyphen in
+# "mainsail\u2011tech.com", a narrow no-break space in "May\u202f26". AgentDojo grades answers by
+# exact substring match, so a correct answer fails on typography alone. We map them to plain ASCII
+# for both baseline and defended runs, so the comparison stays fair.
+_TYPOGRAPHY = str.maketrans(
+    {
+        "\u2010": "-",  # hyphen
+        "\u2011": "-",  # non-breaking hyphen
+        "\u2012": "-",  # figure dash
+        "\u2013": "-",  # en dash
+        "\u2212": "-",  # minus sign
+        "\u00a0": " ",  # no-break space
+        "\u202f": " ",  # narrow no-break space
+        "\u2009": " ",  # thin space
+    }
+)
+
+
+def normalize_typography(text: str) -> str:
+    return text.translate(_TYPOGRAPHY)
+
+
 class HostPipeline(BasePipelineElement):
     """Runs every AgentDojo task through an external agent host."""
 
@@ -78,7 +100,7 @@ class HostPipeline(BasePipelineElement):
         self.last_host_response = body
 
         self.tasks_run += 1
-        output = body.get("output") or ""
+        output = normalize_typography(body.get("output") or "")
         if body.get("error"):
             self.host_errors.append(body["error"])
             output = f"[host error] {body['error']}"

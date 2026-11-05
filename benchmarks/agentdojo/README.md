@@ -89,3 +89,8 @@ Reports are written to `results/` as JSON, with per-task traces under `results/t
 
 - Small local models solve fewer tasks than frontier models, so their utility numbers are low across the board. Compare baseline against defended on the same model, not against published leaderboards.
 - Confidentiality labels are not exercised yet: every workspace tool is labelled public, so this measures prompt-injection (integrity) defence only.
+
+## Deviations from a stock AgentDojo run
+
+- **Typography in answers.** Before grading, the bridge maps typographic dashes and no-break spaces in the agent's final answer to plain ASCII. Some models write `mainsail‑tech.com` with a non-breaking hyphen, and AgentDojo's exact-match grading would otherwise fail a correct answer. This is applied to baseline and defended runs alike.
+
