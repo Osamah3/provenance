@@ -62,6 +62,8 @@ Then run a small subset first, to see how long a task takes on your machine:
 python -m provenance_agentdojo.run --suite workspace --user-tasks user_task_0 user_task_1 user_task_2 --injection-tasks injection_task_0 injection_task_1
 ```
 
+Local models are slow, so the host waits up to 600 seconds for each model call (`--Model:TimeoutSeconds=...`) and doesn't retry. For Qwen3 it also turns off the model's hidden "thinking" (`--Model:NoThink=false` turns it back on), which is usually what makes a call take minutes. Ollama's default context window may be too small for the workspace suite's 24 tool definitions; set `OLLAMA_CONTEXT_LENGTH=16384` before starting Ollama.
+
 Leave out `--user-tasks` and `--injection-tasks` to run the whole suite: 40 user tasks and 560 attack pairs for workspace.
 
 Any OpenAI-compatible endpoint works for the model:

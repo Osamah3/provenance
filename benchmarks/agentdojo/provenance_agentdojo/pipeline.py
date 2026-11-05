@@ -38,7 +38,7 @@ class HostPipeline(BasePipelineElement):
         suite_name: str,
         defended: bool,
         model_label: str = "local",
-        timeout_seconds: float = 600,
+        timeout_seconds: float = 3600,  # a whole task: several slow local model calls
     ) -> None:
         self.tool_server = tool_server
         self.host_url = host_url.rstrip("/")
