@@ -14,10 +14,10 @@ namespace Provenance.AgentDojo.Host;
 /// (<c>Model__Name=qwen3:8b</c>). Keys: <c>Provider</c> (<c>openai</c> or <c>scripted</c>),
 /// <c>Endpoint</c>, <c>Name</c>, <c>ApiKey</c>, <c>TimeoutSeconds</c> (per model call, default 600),
 /// <c>NoThink</c> (default true for Qwen3 models: turns off their long hidden reasoning, which is
-/// what makes local runs slow), <c>Retries</c> (default 0 for a local endpoint, where a retry just
-/// repeats a slow call, and 3 for a hosted one, where it rides out rate limits).
+/// what makes local runs slow), <c>MaxRateLimitWaitSeconds</c> (default 90: a rate limit that resets
+/// sooner is waited out, a longer one such as a daily cap fails the task at once).
 /// </remarks>
-public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink, int Retries)
+public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink, TimeSpan MaxRateLimitWait)
 {
     public static ModelSettings From(IConfiguration configuration)
     {
@@ -32,7 +32,7 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             ApiKey: section["ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "ollama",
             Timeout: TimeSpan.FromSeconds(section.GetValue("TimeoutSeconds", 600)),
             NoThink: section.GetValue("NoThink", name.Contains("qwen3", StringComparison.OrdinalIgnoreCase)),
-            Retries: section.GetValue("Retries", endpoint.IsLoopback ? 0 : 3));
+            MaxRateLimitWait: TimeSpan.FromSeconds(section.GetValue("MaxRateLimitWaitSeconds", 90)));
     }
 
     public IChatClient CreateClient()
@@ -52,13 +52,15 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             Endpoint = Endpoint,
             // Local models are slow; the default 100 s timeout cuts them off mid-answer.
             NetworkTimeout = Timeout,
-            // Retries back off and honour Retry-After, which hosted free tiers send when rate limiting.
-            RetryPolicy = new ClientRetryPolicy(maxRetries: Retries),
+            // No blind retries: a timeout would only repeat a slow call, and the client's own retries
+            // honour any Retry-After, waiting up to an hour on a daily cap. Rate limits are handled
+            // by RateLimitChatClient instead.
+            RetryPolicy = new ClientRetryPolicy(maxRetries: 0),
         };
 
-        IChatClient client = new OpenAIClient(new ApiKeyCredential(ApiKey), options)
-            .GetChatClient(Name)
-            .AsIChatClient();
+        IChatClient client = new RateLimitChatClient(
+            new OpenAIClient(new ApiKeyCredential(ApiKey), options).GetChatClient(Name).AsIChatClient(),
+            MaxRateLimitWait);
 
         return NoThink ? new NoThinkChatClient(client) : client;
     }
