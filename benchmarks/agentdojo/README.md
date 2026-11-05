@@ -72,6 +72,15 @@ Any OpenAI-compatible endpoint works for the model:
 dotnet run --project benchmarks/agentdojo/host -- --Model:Endpoint=https://api.openai.com/v1 --Model:Name=gpt-4o-mini --Model:ApiKey=sk-...
 ```
 
+A CPU-only PC is usually too slow for the full benchmark (each workspace call sends several thousand tokens of tool definitions). Groq's free tier, which needs no credit card, works as an OpenAI-compatible endpoint; keep the key in an environment variable rather than on the command line:
+
+```powershell
+$env:Model__ApiKey = "gsk_..."
+dotnet run --project benchmarks/agentdojo/host -- --Model:Endpoint=https://api.groq.com/openai/v1 --Model:Name=llama-3.3-70b-versatile
+```
+
+Free tiers cap tokens per day, so expect to run a few tasks at a time, not the whole suite.
+
 If you use a hosted model, pass `--model-label` with a name AgentDojo knows (for example `gpt-4o-mini-2024-07-18`), so its attacks address the model the way the published results do.
 
 Reports are written to `results/` as JSON, with per-task traces under `results/traces/`.
