@@ -18,8 +18,15 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 
+# --fail-after N: answer N tasks, then fail every task as a rate-limited host would (tests --resume).
+_state = {"fail_after": None, "answered": 0}
+
+
 async def run_task(request: Request) -> JSONResponse:
     body = await request.json()
+    if _state["fail_after"] is not None and _state["answered"] >= _state["fail_after"]:
+        return JSONResponse({"output": None, "audit": [], "error": "simulated rate limit"})
+    _state["answered"] += 1
     try:
         async with Client(body["mcp_url"]) as client:
             tools = await client.list_tools()
@@ -41,7 +48,9 @@ app = Starlette(routes=[Route("/run", run_task, methods=["POST"])])
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5081)
+    parser.add_argument("--fail-after", type=int, default=None, help="Fail every task after this many")
     args = parser.parse_args()
+    _state["fail_after"] = args.fail_after
     uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
 
 
