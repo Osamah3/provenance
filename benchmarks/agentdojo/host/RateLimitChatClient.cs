@@ -8,7 +8,9 @@ namespace Provenance.AgentDojo.Host;
 /// Waits out short rate limits (a per-minute cap) and fails fast on long ones (a daily cap), so a
 /// benchmark run stops within seconds instead of hanging for an hour, and <c>--resume</c> picks up later.
 /// </summary>
-internal sealed class RateLimitChatClient(IChatClient inner, TimeSpan maxWait, int maxAttempts = 5)
+/// <remarks>With <paramref name="retryNetworkErrors"/>, a dropped connection (no response at all) is retried
+/// every minute too, so an unattended run survives a short internet outage.</remarks>
+internal sealed class RateLimitChatClient(IChatClient inner, TimeSpan maxWait, int maxAttempts = 5, bool retryNetworkErrors = false)
     : DelegatingChatClient(inner)
 {
     public override async Task<ChatResponse> GetResponseAsync(
@@ -38,6 +40,12 @@ internal sealed class RateLimitChatClient(IChatClient inner, TimeSpan maxWait, i
                 }
 
                 await Task.Delay(wait, cancellationToken);
+            }
+            catch (ClientResultException ex) when (ex.Status == 0 && retryNetworkErrors && attempt < maxAttempts)
+            {
+                // Status 0: the request never got a response (no internet, DNS failure, connection reset).
+                Console.WriteLine($"[network] {ex.Message.Split('\n')[0]} Retrying in 1 min (attempt {attempt}).");
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
             }
         }
     }

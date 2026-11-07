@@ -76,7 +76,8 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
         IChatClient client = new RateLimitChatClient(
             chat.AsIChatClient(),
             maxWait: waitForRateLimits ? TimeSpan.FromHours(6) : MaxRateLimitWait,
-            maxAttempts: waitForRateLimits ? 200 : 5);
+            maxAttempts: waitForRateLimits ? 200 : 5,
+            retryNetworkErrors: waitForRateLimits);
 
         return NoThink ? new NoThinkChatClient(client) : client;
     }
