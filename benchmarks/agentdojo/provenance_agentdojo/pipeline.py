@@ -62,6 +62,7 @@ class HostPipeline(BasePipelineElement):
         model_label: str = "local",
         timeout_seconds: float = 1800,  # a whole task: several slow local model calls
         wait_for_rate_limits: bool = False,
+        typed_answers: bool = False,
     ) -> None:
         self.tool_server = tool_server
         self.host_url = host_url.rstrip("/")
@@ -69,7 +70,9 @@ class HostPipeline(BasePipelineElement):
         self.defended = defended
         # AgentDojo's attacks address the model by name and look it up from the pipeline name,
         # so the label must be one AgentDojo knows ("local" means a local model).
-        self.name = f"{model_label}-provenance-{'defended' if defended else 'baseline'}"
+        self.typed_answers = defended and typed_answers
+        variant = "baseline" if not defended else ("defended-typed" if self.typed_answers else "defended")
+        self.name = f"{model_label}-provenance-{variant}"
         self.system_message = load_system_message(None)
         self.wait_for_rate_limits = wait_for_rate_limits
         # When the host waits out rate limits, one task can take hours: don't time it out.
@@ -105,6 +108,7 @@ class HostPipeline(BasePipelineElement):
                         "system_prompt": self.system_message,
                         "query": query,
                         "wait_for_rate_limits": self.wait_for_rate_limits,
+                        "typed_answers": self.typed_answers,
                     },
                 )
                 response.raise_for_status()

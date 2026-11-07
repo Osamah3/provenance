@@ -31,6 +31,19 @@ public sealed class ProvenanceOptions
     public bool TerminateOnViolation { get; set; }
 
     /// <summary>
+    /// Let <c>quarantined_llm</c> return small typed answers straight to the model: true or false, a number,
+    /// a date, or one of a list of options the model supplies. Off by default.
+    /// </summary>
+    /// <remarks>
+    /// A typed answer that parses exactly is labelled trusted (keeping the confidentiality of the data it
+    /// came from), so the model can act on it without making the conversation untrusted. This is what
+    /// lets an agent check "am I free at noon?" and then book the meeting. The trade-off: an attacker who
+    /// controls the hidden data cannot inject instructions this way, but can influence which allowed value
+    /// comes back, for example flip a yes/no or choose a date.
+    /// </remarks>
+    public bool AllowTypedQuarantineAnswers { get; set; }
+
+    /// <summary>
     /// The tool-less model that processes hidden content for <c>quarantined_llm</c>.
     /// It must not contain a <see cref="FunctionInvokingChatClient"/>.
     /// </summary>

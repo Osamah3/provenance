@@ -100,3 +100,7 @@ Reports are written to `results/` as JSON, with per-task traces under `results/t
 
 - **Typography in answers.** Before grading, the bridge maps typographic dashes and no-break spaces in the agent's final answer to plain ASCII. Some models write `mainsail‑tech.com` with a non-breaking hyphen, and AgentDojo's exact-match grading would otherwise fail a correct answer. This is applied to baseline and defended runs alike.
 
+## Strict and typed defences
+
+`--mode` picks what runs: `baseline` (no Provenance), `defended` (strict Provenance), `typed` (Provenance with `AllowTypedQuarantineAnswers`), `both` (baseline and defended, the default) or `all`. Each has its own traces, so a typed run can be added to an existing baseline and defended run with `--mode typed --resume`. Typed runs add one sentence to the defended system prompt explaining `output_type` and advising against `inspect_variable`; strict runs keep the prompt they were measured with.
+
