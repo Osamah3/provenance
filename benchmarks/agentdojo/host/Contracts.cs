@@ -10,7 +10,9 @@ public sealed record RunRequest(
     [property: JsonPropertyName("system_prompt")] string SystemPrompt,
     [property: JsonPropertyName("query")] string Query,
     // Wait out rate limits however long they last, instead of failing the task (bridge's --wait).
-    [property: JsonPropertyName("wait_for_rate_limits")] bool WaitForRateLimits = false);
+    [property: JsonPropertyName("wait_for_rate_limits")] bool WaitForRateLimits = false,
+    // Defended runs only: let quarantined_llm return typed answers (ProvenanceOptions.AllowTypedQuarantineAnswers).
+    [property: JsonPropertyName("typed_answers")] bool TypedAnswers = false);
 
 /// <summary>The agent's answer, the Provenance decisions behind it, or the error that stopped it.</summary>
 public sealed record RunResponse(

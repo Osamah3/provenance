@@ -70,6 +70,12 @@ Policies can be passed to `Protect`, or declared in a tool's `AdditionalProperti
 
 The labels, policy keys and variable-reference format match [FIDES](https://arxiv.org/abs/2505.23643) in Microsoft Agent Framework (Python). Per-result labels from IFC-aware MCP servers (`_meta.ifc`, as emitted by GitHub's MCP server) are read with `LabelWire.TryReadIfcMeta`.
 
+### Typed answers (opt-in)
+
+In strict mode an agent that needs to *decide* something from untrusted content, such as "am I free at noon? then book lunch", gets stuck: reading the content makes the conversation untrusted, and every action after that is blocked. Set `AllowTypedQuarantineAnswers = true` and `quarantined_llm` takes an `output_type` of `boolean`, `integer`, `number`, `date`, `datetime` or `choice` (one of the options the agent lists). An answer that parses exactly is returned to the agent in the clear, labelled trusted with the confidentiality of its inputs, so the agent can act on it. Anything that does not parse stays hidden.
+
+The trade-off: a typed answer cannot carry instructions, but an attacker who controls the hidden data can still influence *which* allowed value comes back, for example flip a yes/no or choose a date. That is why it is off by default.
+
 Every decision is recorded in `session.AuditLog` and as an OpenTelemetry span; subscribe with `.AddSource("Provenance")`.
 
 ## Limitations (today)

@@ -97,15 +97,21 @@ def run(args: argparse.Namespace) -> dict:
         "runs": {},
     }
 
-    modes = {"baseline": [False], "defended": [True], "both": [False, True]}[args.mode]
+    # baseline: no Provenance. defended: strict Provenance. typed: Provenance with typed quarantine answers.
+    variants = {
+        "baseline": ["baseline"],
+        "defended": ["defended"],
+        "typed": ["typed"],
+        "both": ["baseline", "defended"],
+        "all": ["baseline", "defended", "typed"],
+    }[args.mode]
     traces_dir = Path(args.out) / "traces"
     with ToolServer() as tool_server, _QuietLogger(str(traces_dir)):
-        for defended in modes:
+        for label in variants:
             pipeline = HostPipeline(
-                tool_server, args.host, args.suite, defended,
-                model_label=args.model_label, wait_for_rate_limits=args.wait,
+                tool_server, args.host, args.suite, defended=label != "baseline",
+                model_label=args.model_label, wait_for_rate_limits=args.wait, typed_answers=label == "typed",
             )
-            label = "defended" if defended else "baseline"
             pipeline_dir = traces_dir / pipeline.name / suite.name
             if args.resume:
                 dropped = _drop_failed_traces(pipeline_dir)
@@ -195,7 +201,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="http://localhost:5080", help="URL of the agent host")
     parser.add_argument("--suite", default="workspace", choices=["workspace", "travel", "banking", "slack"])
-    parser.add_argument("--mode", default="both", choices=["baseline", "defended", "both"])
+    parser.add_argument("--mode", default="both", choices=["baseline", "defended", "typed", "both", "all"],
+        help="baseline: no Provenance; defended: strict Provenance; typed: Provenance with typed quarantine answers; "
+        "both: baseline and defended; all: all three",
+    )
     parser.add_argument("--attack", default="important_instructions")
     parser.add_argument("--user-tasks", nargs="*", default=None, help="Subset of user task ids (default: all)")
     parser.add_argument("--injection-tasks", nargs="*", default=None, help="Subset of injection task ids (default: all)")
