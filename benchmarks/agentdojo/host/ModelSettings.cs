@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.ClientModel.Primitives;
+using Azure.Identity;
 using Microsoft.Extensions.AI;
 using OpenAI;
 
@@ -15,9 +16,11 @@ namespace Provenance.AgentDojo.Host;
 /// <c>Endpoint</c>, <c>Name</c>, <c>ApiKey</c>, <c>TimeoutSeconds</c> (per model call, default 600),
 /// <c>NoThink</c> (default true for Qwen3 models: turns off their long hidden reasoning, which is
 /// what makes local runs slow), <c>MaxRateLimitWaitSeconds</c> (default 90: a rate limit that resets
-/// sooner is waited out, a longer one such as a daily cap fails the task at once).
+/// sooner is waited out, a longer one such as a daily cap fails the task at once), <c>Auth</c> (<c>key</c>,
+/// the default, or <c>entra</c>: sign in with Microsoft Entra ID, for Azure OpenAI resources where key
+/// authentication is disabled; uses your Azure CLI or Visual Studio sign-in) and <c>EntraScope</c>.
 /// </remarks>
-public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink, TimeSpan MaxRateLimitWait)
+public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, string ApiKey, TimeSpan Timeout, bool NoThink, TimeSpan MaxRateLimitWait, string Auth, string EntraScope)
 {
     public static ModelSettings From(IConfiguration configuration)
     {
@@ -32,7 +35,9 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             ApiKey: section["ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "ollama",
             Timeout: TimeSpan.FromSeconds(section.GetValue("TimeoutSeconds", 600)),
             NoThink: section.GetValue("NoThink", name.Contains("qwen3", StringComparison.OrdinalIgnoreCase)),
-            MaxRateLimitWait: TimeSpan.FromSeconds(section.GetValue("MaxRateLimitWaitSeconds", 90)));
+            MaxRateLimitWait: TimeSpan.FromSeconds(section.GetValue("MaxRateLimitWaitSeconds", 90)),
+            Auth: (section["Auth"] ?? "key").ToLowerInvariant(),
+            EntraScope: section["EntraScope"] ?? "https://cognitiveservices.azure.com/.default");
     }
 
     /// <param name="waitForRateLimits">Wait out every rate limit, even a daily cap, instead of failing.</param>
@@ -59,18 +64,30 @@ public sealed record ModelSettings(string Provider, Uri Endpoint, string Name, s
             RetryPolicy = new ClientRetryPolicy(maxRetries: 0),
         };
 
+        var chat = Auth switch
+        {
+            "key" => new OpenAI.Chat.ChatClient(Name, new ApiKeyCredential(ApiKey), options),
+#pragma warning disable OPENAI001, SCME0002 // custom authentication policies are marked experimental
+            "entra" => new OpenAI.Chat.ChatClient(Name, new BearerTokenPolicy(AzureCredential.Value, EntraScope), options),
+#pragma warning restore OPENAI001, SCME0002
+            _ => throw new InvalidOperationException($"Unknown Model:Auth '{Auth}'. Use 'key' or 'entra'."),
+        };
+
         IChatClient client = new RateLimitChatClient(
-            new OpenAIClient(new ApiKeyCredential(ApiKey), options).GetChatClient(Name).AsIChatClient(),
+            chat.AsIChatClient(),
             maxWait: waitForRateLimits ? TimeSpan.FromHours(6) : MaxRateLimitWait,
             maxAttempts: waitForRateLimits ? 200 : 5);
 
         return NoThink ? new NoThinkChatClient(client) : client;
     }
 
+    // One credential for the whole process, so its token cache is shared by every task.
+    private static readonly Lazy<DefaultAzureCredential> AzureCredential = new(() => new DefaultAzureCredential());
+
     // Never print the API key.
     public override string ToString() => Provider == "scripted"
         ? "scripted (no model)"
-        : $"{Name} at {Endpoint} (timeout {Timeout.TotalSeconds:0}s{(NoThink ? ", thinking off" : "")})";
+        : $"{Name} at {Endpoint} (auth {Auth}, timeout {Timeout.TotalSeconds:0}s{(NoThink ? ", thinking off" : "")})";
 }
 
 /// <summary>
