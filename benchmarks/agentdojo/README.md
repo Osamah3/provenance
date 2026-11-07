@@ -81,6 +81,12 @@ dotnet run --project benchmarks/agentdojo/host -- --Model:Endpoint=https://api.g
 
 Free tiers cap tokens per day, so expect to run a few tasks at a time, not the whole suite. Add `--resume` to run a large selection over several days: each run keeps the tasks already in `results/traces`, retries the ones that failed in the host, and reports totals over everything done so far. The host waits out short rate limits (up to 90 seconds, `--Model:MaxRateLimitWaitSeconds`) and fails a task at once on a longer one, such as a daily cap. After three host errors in a row the bridge stops calling the host and marks the rest as still to run. To finish unattended instead, add `--wait`: the host then waits out every rate limit, daily caps included, printing when it will continue, and the run carries on by itself. Use a separate `--out` directory per model, so resumed runs never mix models.
 
+For an Azure OpenAI resource with key authentication turned off, sign in with Microsoft Entra ID instead: run `az login` (Azure CLI) with an account that has the *Cognitive Services OpenAI User* role on the resource, then add `--Model:Auth=entra` and leave out the key:
+
+```powershell
+dotnet run --project benchmarks/agentdojo/host -- --Model:Endpoint=https://<resource>.openai.azure.com/openai/v1/ --Model:Name=<deployment> --Model:Auth=entra
+```
+
 If you use a hosted model, pass `--model-label` with a name AgentDojo knows (for example `gpt-4o-mini-2024-07-18`), so its attacks address the model the way the published results do.
 
 Reports are written to `results/` as JSON, with per-task traces under `results/traces/`.

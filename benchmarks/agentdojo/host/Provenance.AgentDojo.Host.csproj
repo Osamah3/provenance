@@ -8,6 +8,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="$(MicrosoftExtensionsAIVersion)" />
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <!-- Microsoft Entra ID sign-in, for Azure OpenAI resources that have key authentication turned off. -->
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
   </ItemGroup>
 
   <ItemGroup>
