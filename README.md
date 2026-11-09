@@ -4,7 +4,7 @@ Deterministic prompt-injection defence for .NET agents built on [Microsoft.Exten
 
 An agent that reads untrusted content (issues, emails, web pages) and can also act (post, send, write) can be hijacked by instructions hidden in that content. Better prompts don't fix this reliably. Provenance enforces it in code instead: every piece of content carries a label, and a tool can only run if the labels in play allow it.
 
-> **Status: pre-alpha.** The API will change. Not yet benchmarked.
+> **Status: pre-alpha.** The API will change. Early benchmark results are below; the sample is small.
 
 ## What it stops
 
@@ -15,6 +15,18 @@ An agent that reads untrusted content (issues, emails, web pages) and can also a
 | Hidden content passed into a tool argument | The argument carries the untrusted label, and the call is blocked |
 | Private data sent to a public destination | Blocked by the destination's confidentiality cap |
 | An unwrapped tool slipped into the request | The whole request is refused before the model is called |
+
+## Early results
+
+[AgentDojo](https://github.com/ethz-spylab/agentdojo) v1.2.2, `workspace` suite, `important_instructions` attack, model `openai/gpt-oss-120b` (via Groq), November 2026. Same model, tools and tasks in every row; only the defence changes.
+
+| Defence | Utility (no attack) | Utility under attack | Attack success |
+| --- | --- | --- | --- |
+| None | 100% (5/5) | 50% (5/10) | 20% (2/10) |
+| Provenance, strict | 60% (3/5) | 60% (6/10) | **0% (0/10)** |
+| Provenance, typed answers | 80% (4/5) | 80% (8/10) | **0% (0/10)** |
+
+**Read this as an early signal, not a headline number:** it covers 5 of the suite's 40 user tasks (0, 3, 6, 7, 14) and 2 of its 14 injection tasks (0, 3), run once each. Strict mode loses utility on tasks that must act on what untrusted content says ("am I free at noon? then book lunch"). [Typed answers](#typed-answers-opt-in) win most of it back. The remaining typed failure is a reschedule that needs an event id from hidden data, where the agent created a new event instead. Method, deviations and how to reproduce: [`benchmarks/agentdojo`](benchmarks/agentdojo).
 
 ## Quick start
 
@@ -88,7 +100,7 @@ Every decision is recorded in `session.AuditLog` and as an OpenTelemetry span; s
 
 ## Roadmap
 
-1. AgentDojo benchmark: utility and attack-success rates for each model, with and without Provenance. The harness is in [`benchmarks/agentdojo`](benchmarks/agentdojo); results are not published yet.
+1. AgentDojo benchmark at full scale (all workspace tasks and attacks, more models, the other three suites). [Early results](#early-results) cover a small sample.
 2. MCP client integration: annotation-derived policies and `_meta.ifc` labels applied automatically.
 3. Microsoft Agent Framework adapter (`AIAgentBuilder`).
 4. Human approval for policy violations, bound to the exact call.

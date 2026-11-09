@@ -104,3 +104,22 @@ Reports are written to `results/` as JSON, with per-task traces under `results/t
 
 `--mode` picks what runs: `baseline` (no Provenance), `defended` (strict Provenance), `typed` (Provenance with `AllowTypedQuarantineAnswers`), `both` (baseline and defended, the default) or `all`. Each has its own traces, so a typed run can be added to an existing baseline and defended run with `--mode typed --resume`. Typed runs add one sentence to the defended system prompt explaining `output_type` and advising against `inspect_variable`; strict runs keep the prompt they were measured with.
 
+## Results so far
+
+Run on 2026-11-05 to 2026-11-09 with `openai/gpt-oss-120b` on Groq's free tier, user tasks `user_task_0 user_task_3 user_task_6 user_task_7 user_task_14`, injection tasks `injection_task_0 injection_task_3`:
+
+```
+            utility  utility under attack  attack success  pairs
+baseline       100%                   50%             20%     10
+defended        60%                   60%              0%     10
+typed           80%                   80%              0%     10
+```
+
+To reproduce (start the host with that model first):
+
+```powershell
+python -m provenance_agentdojo.run --mode all --suite workspace --user-tasks user_task_0 user_task_3 user_task_6 user_task_7 user_task_14 --injection-tasks injection_task_0 injection_task_3 --out results\gpt-oss-120b --resume --wait
+```
+
+Each task ran once, and model output varies from run to run: an earlier baseline run of `user_task_0` with `injection_task_0` resisted the attack, and a later one fell for it. Treat differences of one or two tasks as noise.
+
