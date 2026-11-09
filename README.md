@@ -1,5 +1,7 @@
 # Provenance
 
+[![NuGet](https://img.shields.io/nuget/vpre/Provenance)](https://www.nuget.org/packages/Provenance) [![CI](https://github.com/Osamah3/provenance/actions/workflows/ci.yml/badge.svg)](https://github.com/Osamah3/provenance/actions/workflows/ci.yml)
+
 Deterministic prompt-injection defence for .NET agents built on [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai).
 
 An agent that reads untrusted content (issues, emails, web pages) and can also act (post, send, write) can be hijacked by instructions hidden in that content. Better prompts don't fix this reliably. Provenance enforces it in code instead: every piece of content carries a label, and a tool can only run if the labels in play allow it.
@@ -29,6 +31,10 @@ An agent that reads untrusted content (issues, emails, web pages) and can also a
 **Read this as an early signal, not a headline number:** it covers 5 of the suite's 40 user tasks (0, 3, 6, 7, 14) and 2 of its 14 injection tasks (0, 3), run once each. Strict mode loses utility on tasks that must act on what untrusted content says ("am I free at noon? then book lunch"). [Typed answers](#typed-answers-opt-in) win most of it back. The remaining typed failure is a reschedule that needs an event id from hidden data, where the agent created a new event instead. Method, deviations and how to reproduce: [`benchmarks/agentdojo`](benchmarks/agentdojo).
 
 ## Quick start
+
+```
+dotnet add package Provenance --prerelease
+```
 
 ```csharp
 using Microsoft.Extensions.AI;
