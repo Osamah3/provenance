@@ -8,3 +8,8 @@ artifacts/
 .venv/
 __pycache__/
 benchmarks/agentdojo/results/
+
+# NuGet packages
+nupkgs/
+*.nupkg
+*.snupkg
