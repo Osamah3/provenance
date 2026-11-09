@@ -1,0 +1,43 @@
+name: Release
+
+# Publishes Provenance to nuget.org when a version tag such as v0.2.0-alpha.1 is pushed.
+# Uses nuget.org Trusted Publishing: GitHub's OIDC token is exchanged for a short-lived
+# API key, so no NuGet key is stored in this repository.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # needed to request the OIDC token for Trusted Publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test -c Release
+
+      - name: Pack
+        run: |
+          # A tag v1.2.3 publishes version 1.2.3; a manual run uses the version in the project file.
+          VERSION_ARG=""
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then VERSION_ARG="-p:Version=${GITHUB_REF_NAME#v}"; fi
+          dotnet pack src/Provenance -c Release -o nupkgs $VERSION_ARG
+
+      - name: NuGet login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: osamah
+
+      - name: Push to nuget.org
+        run: dotnet nuget push "nupkgs/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
