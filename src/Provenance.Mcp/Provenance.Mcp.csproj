@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Provenance.Mcp</RootNamespace>
+    <PackageId>Provenance.Mcp</PackageId>
+    <Description>Model Context Protocol integration for Provenance: protects MCP client tools with policies derived from tool annotations and applies per-result labels sent by IFC-aware servers (_meta.ifc).</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- NuGet package -->
+  <PropertyGroup>
+    <Version>0.3.0-alpha.1</Version>
+    <PackageTags>ai;agents;llm;security;prompt-injection;information-flow-control;mcp;model-context-protocol</PackageTags>
+    <PackageProjectUrl>https://github.com/Osamah3/provenance</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.2.0" />
+    <ProjectReference Include="..\Provenance\Provenance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Provenance.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

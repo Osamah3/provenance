@@ -10,7 +10,7 @@
 
   <!-- NuGet package -->
   <PropertyGroup>
-    <Version>0.2.0-alpha.1</Version>
+    <Version>0.3.0-alpha.1</Version>
     <PackageTags>ai;agents;llm;security;prompt-injection;information-flow-control;mcp;microsoft-extensions-ai</PackageTags>
     <PackageProjectUrl>https://github.com/Osamah3/provenance</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>

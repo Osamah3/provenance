@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Provenance\Provenance.csproj" />
+    <ProjectReference Include="..\..\src\Provenance.Mcp\Provenance.Mcp.csproj" />
   </ItemGroup>
 
 </Project>

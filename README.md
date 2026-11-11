@@ -88,6 +88,34 @@ Policies can be passed to `Protect`, or declared in a tool's `AdditionalProperti
 
 The labels, policy keys and variable-reference format match [FIDES](https://arxiv.org/abs/2505.23643) in Microsoft Agent Framework (Python). Per-result labels from IFC-aware MCP servers (`_meta.ifc`, as emitted by GitHub's MCP server) are read with `LabelWire.TryReadIfcMeta`.
 
+### MCP tools
+
+`Provenance.Mcp` protects every tool of an MCP server in one call:
+
+```
+dotnet add package Provenance.Mcp --prerelease
+```
+
+```csharp
+using Provenance.Mcp;
+
+var github = await McpClient.CreateAsync(githubTransport);
+var files = await McpClient.CreateAsync(filesTransport);
+
+IList<AITool> tools =
+[
+    .. await github.ListProtectedToolsAsync(session),                  // untrusted by default
+    .. await files.ListProtectedToolsAsync(session, new McpProvenanceOptions
+    {
+        ServerIntegrity = Integrity.Trusted,                           // a server you run yourself
+        Policies = { ["delete_file"] = ToolPolicy.PublicSink },        // override any tool by name
+    }),
+    .. session.CreateSecurityTools(),
+];
+```
+
+Policies come from each tool's annotations, read conservatively because the server writes them: results are untrusted unless you say the server is trusted, `openWorldHint: true` tools are always untrusted, no MCP tool may receive private data, and none runs once the conversation is untrusted (`AllowReadOnlyToolsInUntrustedContext` relaxes this for read-only, closed-world tools). Labels that IFC-aware servers attach to each result (`_meta.ifc`, as GitHub's MCP server does) are applied automatically; they can only make a result stricter unless you set `TrustServerLabels`.
+
 ### Typed answers (opt-in)
 
 In strict mode an agent that needs to *decide* something from untrusted content, such as "am I free at noon? then book lunch", gets stuck: reading the content makes the conversation untrusted, and every action after that is blocked. Set `AllowTypedQuarantineAnswers = true` and `quarantined_llm` takes an `output_type` of `boolean`, `integer`, `number`, `date`, `datetime` or `choice` (one of the options the agent lists). An answer that parses exactly is returned to the agent in the clear, labelled trusted with the confidentiality of its inputs, so the agent can act on it. Anything that does not parse stays hidden.
@@ -107,9 +135,8 @@ Every decision is recorded in `session.AuditLog` and as an OpenTelemetry span; s
 ## Roadmap
 
 1. AgentDojo benchmark at full scale (all workspace tasks and attacks, more models, the other three suites). [Early results](#early-results) cover a small sample.
-2. MCP client integration: annotation-derived policies and `_meta.ifc` labels applied automatically.
-3. Microsoft Agent Framework adapter (`AIAgentBuilder`).
-4. Human approval for policy violations, bound to the exact call.
+2. Microsoft Agent Framework adapter (`AIAgentBuilder`).
+3. Human approval for policy violations, bound to the exact call.
 
 ## Credits
 

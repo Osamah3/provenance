@@ -1,6 +1,6 @@
 name: Release
 
-# Publishes Provenance to nuget.org when a version tag such as v0.2.0-alpha.1 is pushed.
+# Publishes Provenance and Provenance.Mcp to nuget.org when a version tag such as v0.2.0-alpha.1 is pushed.
 # Uses nuget.org Trusted Publishing: GitHub's OIDC token is exchanged for a short-lived
 # API key, so no NuGet key is stored in this repository.
 
@@ -32,6 +32,7 @@ jobs:
           VERSION_ARG=""
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then VERSION_ARG="-p:Version=${GITHUB_REF_NAME#v}"; fi
           dotnet pack src/Provenance -c Release -o nupkgs $VERSION_ARG
+          dotnet pack src/Provenance.Mcp -c Release -o nupkgs $VERSION_ARG
 
       - name: NuGet login (Trusted Publishing)
         uses: NuGet/login@v1

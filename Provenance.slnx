@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Provenance/Provenance.csproj" />
+    <Project Path="src/Provenance.Mcp/Provenance.Mcp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Provenance.Tests/Provenance.Tests.csproj" />
